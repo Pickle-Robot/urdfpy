@@ -36,9 +36,10 @@ class URDFType(object):
     - ``_TAG`` - This is a string that represents the XML tag for the node
       containing this type of object.
     """
-    _ATTRIBS = {}   # Map from attrib name to (type, required)
+
+    _ATTRIBS = {}  # Map from attrib name to (type, required)
     _ELEMENTS = {}  # Map from element name to (type, required, multiple)
-    _TAG = ''       # XML tag for this element
+    _TAG = ''  # XML tag for this element
 
     def __init__(self):
         pass
@@ -895,7 +896,7 @@ class Material(URDFType):
     @color.setter
     def color(self, value):
         if value is not None:
-            value = np.asanyarray(value).astype(np.float)
+            value = np.asanyarray(value).astype(float)
             value = np.clip(value, 0.0, 1.0)
             if value.shape != (4,):
                 raise ValueError('Color must be a (4,) float')
@@ -3221,14 +3222,15 @@ class URDF(URDFType):
         fk = OrderedDict()
         for link in lfk:
             for visual in link.visuals:
+                material = visual.material
                 for mesh in visual.geometry.meshes:
                     pose = lfk[link].dot(visual.origin)
                     if visual.geometry.mesh is not None:
                         if visual.geometry.mesh.scale is not None:
                             S = np.eye(4, dtype=np.float64)
-                            S[:3,:3] = np.diag(visual.geometry.mesh.scale)
+                            S[:3, :3] = np.diag(visual.geometry.mesh.scale)
                             pose = pose.dot(S)
-                    fk[mesh] = pose
+                    fk[mesh] = pose, material
         return fk
 
     def visual_trimesh_fk_batch(self, cfgs=None, links=None):
@@ -3361,7 +3363,7 @@ class URDF(URDFType):
             pose = lfk[link]
             cm = link.collision_mesh
             if cm is not None:
-                fk[cm] = pose
+                fk[cm] = pose, None
         return fk
 
     def collision_trimesh_fk_batch(self, cfgs=None, links=None):
@@ -3511,9 +3513,14 @@ class URDF(URDFType):
 
         node_map = {}
         scene = pyrender.Scene()
-        for tm in fk:
-            pose = fk[tm]
-            mesh = pyrender.Mesh.from_trimesh(tm, smooth=False)
+        for tm, (pose, material) in fk.items():
+            render_mat = pyrender.material.MetallicRoughnessMaterial(
+                alphaMode='BLEND',
+                baseColorFactor=material.color,
+                metallicFactor=1.0,
+                roughnessFactor=0.8,
+            )
+            mesh = pyrender.Mesh.from_trimesh(tm, smooth=False, material=render_mat)
             node = scene.add(mesh, pose=pose)
             node_map[tm] = node
 
@@ -3537,8 +3544,7 @@ class URDF(URDFType):
                 fk = self.visual_trimesh_fk(cfg=cfg)
 
             v.render_lock.acquire()
-            for mesh in fk:
-                pose = fk[mesh]
+            for mesh, (pose, material) in fk.items():
                 node_map[mesh].matrix = pose
             v.render_lock.release()
 
