@@ -36,10 +36,9 @@ class URDFType(object):
     - ``_TAG`` - This is a string that represents the XML tag for the node
       containing this type of object.
     """
-
-    _ATTRIBS = {}  # Map from attrib name to (type, required)
+    _ATTRIBS = {}   # Map from attrib name to (type, required)
     _ELEMENTS = {}  # Map from element name to (type, required, multiple)
-    _TAG = ''  # XML tag for this element
+    _TAG = ''       # XML tag for this element
 
     def __init__(self):
         pass
