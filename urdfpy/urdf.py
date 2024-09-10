@@ -3227,7 +3227,7 @@ class URDF(URDFType):
                     if visual.geometry.mesh is not None:
                         if visual.geometry.mesh.scale is not None:
                             S = np.eye(4, dtype=np.float64)
-                            S[:3, :3] = np.diag(visual.geometry.mesh.scale)
+                            S[:3,:3] = np.diag(visual.geometry.mesh.scale)
                             pose = pose.dot(S)
                     fk[mesh] = pose, material
         return fk
