@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "urdfpy"
-version = "0.0.22"
+dynamic = ["version"]
 description = "URDF parser and manipulator for Python"
 license = "MIT"
 authors = [{name = "Matthew Matl", email = "matthewcmatl@gmail.com"}]
@@ -28,7 +28,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["flake8", "pytest", "pytest-cov"]
+dev = ["flake8", "packaging", "pytest", "pytest-cov"]
+
+# The wheel version is composed at build time from the upstream version, a
+# monotonic release counter and (off master) the branch name; see _pickle_version.py.
+[tool.hatch.version]
+source = "code"
+path = "_pickle_version.py"
+expression = "get_version()"
 
 [tool.hatch.build.targets.wheel]
 packages = ["urdfpy"]
